@@ -1,125 +1,263 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-slate-100">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secure Mailbox</title>
+  <title>Secure Gmail Services</title>
+  
+  <!-- Gmail Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23EA4335' d='M20 18h-2V9.5L12 14 6 9.5V18H4V6h1.5l6.5 4.88L18.5 6H20v12z'/><path fill='%234285F4' d='M20 6v12h-2V9.5L12 14V6h6.5z'/><path fill='%2334A853' d='M4 6v12h2V9.5L12 14V6H5.5z'/><path fill='%23FBBC05' d='M4 6h16v1.5L12 12.5 4 7.5z'/></svg>">
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Custom UI Styles -->
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    
     body {
-      background: #f3f4f6;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .ios-glass-light {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(30px);
-      -webkit-backdrop-filter: blur(30px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
     }
-    .ios-card-light {
-      background: rgba(255, 255, 255, 0.9);
-      border: 1px solid rgba(0, 0, 0, 0.04);
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* iOS Glassmorphism Effects */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+
+    /* Pulse animation for live sync */
+    .pulse-dot {
+      animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.92); }
     }
   </style>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col items-center justify-center p-4 relative">
+<body class="h-full text-slate-800 antialiased overflow-hidden select-none" oncontextmenu="return false;">
 
-  <!-- CONTAINER -->
-  <div class="max-w-xl w-full space-y-4 relative z-10">
+  <!-- APP ROOT CONTAINER -->
+  <div class="h-full flex flex-col bg-slate-100">
 
-    <!-- 1. PASSWORD LOCK SCREEN (Agar koi direct home page khole) -->
-    <div id="lockScreen" class="ios-glass-light p-8 rounded-3xl text-center space-y-4 shadow-xl">
-      <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 font-bold text-lg">🔒</div>
-      <h1 class="text-lg font-semibold text-slate-900">Secure Access Required</h1>
-      <p class="text-xs text-slate-500">Enter access passcode to view console or mailbox.</p>
-      <input id="accessPin" type="password" placeholder="Enter Passcode..." class="bg-white px-4 py-3 rounded-2xl text-xs w-full border border-slate-200 text-center text-slate-800 focus:outline-none focus:border-indigo-500 shadow-inner">
-      <button onclick="verifyPin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl text-xs font-semibold shadow-lg shadow-indigo-600/20 active:scale-95 transition">Unlock Console</button>
-    </div>
-
-    <!-- 2. ADMIN CONSOLE (Visible after unlock or valid token) -->
-    <div id="adminDashboard" class="space-y-4 hidden">
-      <div class="text-center py-1">
-        <h1 class="text-xl font-semibold tracking-tight text-slate-900">Console Manager</h1>
-        <p class="text-xs text-slate-500">Generate secure untraceable mailboxes</p>
-      </div>
-
-      <div class="ios-glass-light p-6 rounded-3xl space-y-4">
-        <span class="text-[10px] font-medium uppercase tracking-wider text-indigo-600 block">Generator & Alias Customizer</span>
-        <div class="space-y-2">
-          <input id="customAlias" type="text" placeholder="Custom prefix (optional, e.g. executive_hr)" class="bg-white px-3.5 py-2.5 rounded-2xl text-xs w-full border border-slate-200 text-slate-800 focus:outline-none focus:border-indigo-500">
-          <div class="grid grid-cols-2 gap-3 pt-1">
-            <button onclick="createSingleAndCopy()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition text-xs font-semibold text-white py-3 px-4 rounded-2xl shadow-md">
-              + Generate & Copy
-            </button>
-            <button onclick="generateBulkCSV()" class="ios-card-light hover:bg-slate-50 active:scale-95 transition text-xs font-semibold text-slate-700 py-3 px-4 rounded-2xl border border-slate-200">
-              ⚡ Export Bulk CSV
-            </button>
-          </div>
+    <!-- TOP HEADER / BRAND BAR -->
+    <header class="h-16 border-b border-slate-200/80 bg-white/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-20 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center shadow-sm">
+          <!-- Gmail Colored Icon -->
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none">
+            <path d="M20 18H18V9.5L12 14L6 9.5V18H4V6H5.5L12 10.88L18.5 6H20V18Z" fill="#EA4335"/>
+            <path d="M20 6V18H18V9.5L12 14V6H18.5H20Z" fill="#4285F4" opacity="0.9"/>
+            <path d="M4 6V18H6V9.5L12 14V6H5.5H4Z" fill="#34A853" opacity="0.9"/>
+            <path d="M4 6H20V7.5L12 12.5L4 7.5V6Z" fill="#FBBC05"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="font-bold text-sm sm:text-base tracking-tight text-slate-900 flex items-center gap-2">
+            Secure Gmail Services
+            <span class="text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">PRO</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 font-medium">Untraceable Dynamic Mailbox Network</p>
         </div>
       </div>
 
-      <div class="ios-glass-light p-5 rounded-3xl space-y-3">
-        <span class="text-[10px] font-medium uppercase tracking-wider text-slate-500 block">Generated History</span>
-        <div id="adminHistoryList" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
-      </div>
-    </div>
-
-    <!-- 3. ISOLATED DEDICATED MAILBOX VIEW (White Clean iOS UI) -->
-    <div id="secureMailboxView" class="space-y-4 hidden">
-      
-      <div class="ios-glass-light p-4 rounded-3xl flex items-center justify-between gap-3 shadow-md">
-        <div class="flex-1 cursor-pointer group" onclick="copyActiveMail()" title="Click to copy">
-          <span class="text-[10px] font-medium uppercase tracking-wider text-slate-400 block px-1 mb-0.5">Secure Mailbox</span>
-          <div id="activeEmailText" class="font-mono text-sm font-semibold text-indigo-600 px-1 break-all">Loading...</div>
+      <!-- Header Right Controls -->
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-2 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl text-xs text-slate-600 font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-dot"></span>
+          <span>Security Protocol Active</span>
         </div>
-        <button onclick="copyActiveMail()" class="ios-card-light hover:bg-slate-100 active:scale-95 transition text-xs font-medium text-slate-700 px-3.5 py-2.5 rounded-2xl border border-slate-200">
-          Copy Email
+        <button id="lockConsoleBtn" onclick="lockConsole()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5 border border-slate-200">
+          <span>🔒</span> Lock Console
         </button>
       </div>
+    </header>
 
-      <div class="ios-glass-light p-6 rounded-3xl min-h-[440px] flex flex-col shadow-lg">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-200/60 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <h2 class="text-xs font-semibold tracking-wider uppercase text-slate-700">Live Secure Inbox</h2>
-          </div>
-          <span id="syncStatus" class="text-[10px] text-slate-400">Syncing active</span>
+    <!-- VIEW 1: PASSCODE LOCK SCREEN -->
+    <div id="lockScreen" class="flex-1 flex items-center justify-center p-4 relative z-10">
+      <div class="glass-card max-w-sm w-full p-8 rounded-3xl text-center space-y-5 shadow-2xl">
+        <div class="w-16 h-16 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
         </div>
-
-        <div id="secureInboxList" class="flex-1 space-y-3">
-          <div class="h-full flex flex-col items-center justify-center text-center py-24 text-slate-400">
-            <p class="text-xs">Waiting for incoming messages...</p>
-          </div>
+        <div>
+          <h2 class="text-lg font-bold text-slate-900">Console Security Check</h2>
+          <p class="text-xs text-slate-500 mt-1">Provide authorization passcode to access dashboard.</p>
         </div>
+        <div class="space-y-3">
+          <input id="accessPin" type="password" placeholder="Enter Passcode..." onkeydown="if(event.key==='Enter') verifyPin()" class="bg-slate-50 px-4 py-3 rounded-2xl text-sm w-full border border-slate-200 text-center font-medium text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition shadow-inner">
+          <button onclick="verifyPin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-2xl text-xs font-semibold shadow-lg shadow-indigo-600/25 active:scale-[0.98] transition">Unlock Console</button>
+        </div>
+        <p class="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Protected Environment</p>
       </div>
+    </div>
+
+    <!-- MAIN DASHBOARD WRAPPER (Split Left Sidebar + Right Mail View) -->
+    <div id="mainDashboardWrapper" class="flex-1 flex overflow-hidden hidden">
+
+      <!-- LEFT SIDEBAR: GMAIL NAV & GENERATOR -->
+      <aside class="w-72 sm:w-80 border-r border-slate-200/80 bg-white flex flex-col shrink-0">
+        
+        <!-- Action Button (Compose/Generate) -->
+        <div class="p-4 border-b border-slate-100 space-y-2">
+          <button id="adminGenerateBtn" onclick="toggleGeneratorPanel()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-3 px-4 rounded-2xl text-xs font-bold shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            Create New Mailbox
+          </button>
+        </div>
+
+        <!-- GENERATOR CONTROLS (Expandable Admin Console) -->
+        <div id="generatorPanel" class="p-4 bg-slate-50 border-b border-slate-200 space-y-3 hidden">
+          <div class="flex justify-between items-center">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Mailbox Generator</span>
+            <button onclick="toggleGeneratorPanel()" class="text-slate-400 hover:text-slate-600 text-xs">✕</button>
+          </div>
+          <input id="customAlias" type="text" placeholder="Custom prefix (e.g., hr_dept)" class="bg-white px-3 py-2 rounded-xl text-xs w-full border border-slate-200 focus:outline-none focus:border-indigo-500">
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="createSingleAndCopy()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold py-2 px-3 rounded-xl transition">
+              + Single
+            </button>
+            <button onclick="generateBulkCSV()" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-semibold py-2 px-3 rounded-xl transition">
+              ⚡ Bulk CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- NAVIGATION LINKS -->
+        <div class="p-3 space-y-1 font-medium text-xs border-b border-slate-100">
+          <a href="#" onclick="switchTab('inbox')" id="nav-inbox" class="flex items-center justify-between px-3 py-2.5 rounded-xl bg-indigo-50 text-indigo-700 font-semibold transition">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+              <span>Inbox</span>
+            </div>
+            <span id="unreadBadge" class="bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+          </a>
+          <a href="#" onclick="switchTab('starred')" id="nav-starred" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+              <span>Starred</span>
+            </div>
+          </a>
+          <a href="#" onclick="switchTab('sent')" id="nav-sent" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition">
+            <div class="flex items-center gap-2.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+              <span>Sent Outbox</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- RECENT GENERATED HISTORY -->
+        <div id="historySection" class="flex-1 p-3 flex flex-col min-h-0 overflow-hidden">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 mb-2 block">Generated History</span>
+          <div id="adminHistoryList" class="flex-1 overflow-y-auto space-y-1.5 pr-1">
+            <p class="text-xs text-slate-400 py-4 text-center">No mailboxes created yet.</p>
+          </div>
+        </div>
+
+        <!-- FOOTER ADDRESS BADGE -->
+        <div class="p-3 bg-slate-50 border-t border-slate-200/80">
+          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Active Trace Address</div>
+          <div id="sidebarActiveEmail" class="font-mono text-xs font-semibold text-indigo-600 truncate">Select or Create Mailbox</div>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT MAIN CONTENT: GMAIL INBOX / READER -->
+      <main class="flex-1 flex flex-col min-w-0 bg-white">
+        
+        <!-- TOP TOOLBAR -->
+        <div class="h-14 border-b border-slate-200/80 px-4 flex items-center justify-between gap-4 bg-slate-50/50">
+          <!-- Active Address Bar -->
+          <div class="flex items-center gap-2 min-w-0 flex-1">
+            <span class="text-xs font-semibold text-slate-500 whitespace-nowrap">Current Box:</span>
+            <span id="activeEmailText" class="font-mono text-xs font-bold text-indigo-600 truncate bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg">No active mailbox</span>
+            <button onclick="copyActiveMail()" class="text-slate-500 hover:text-indigo-600 p-1.5 hover:bg-slate-200/60 rounded-lg transition" title="Copy Address">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
+          </div>
+
+          <!-- Refresh Control -->
+          <div class="flex items-center gap-3">
+            <span id="syncStatus" class="text-[11px] text-slate-400 font-medium">Sync Active</span>
+            <button onclick="checkSecureInbox()" class="p-2 text-slate-600 hover:bg-slate-200/60 rounded-xl transition" title="Refresh Inbox">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- DUAL-PANE MAIL VIEW (Left Message List + Right Reader) -->
+        <div class="flex-1 flex min-h-0 overflow-hidden">
+          
+          <!-- LEFT: EMAIL LIST -->
+          <div class="w-full md:w-80 lg:w-96 border-r border-slate-200/80 flex flex-col min-h-0 bg-slate-50/30">
+            <div id="secureInboxList" class="flex-1 overflow-y-auto p-2 space-y-1.5">
+              <!-- Empty State -->
+              <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2">
+                <svg class="w-10 h-10 stroke-slate-300" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <p class="text-xs font-medium">Waiting for incoming messages...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: EMAIL READER PANE -->
+          <div class="hidden md:flex flex-1 flex-col min-h-0 bg-white">
+            <div id="readerPlaceholder" class="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-3">
+              <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                <svg class="w-6 h-6 stroke-slate-400" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76"/></svg>
+              </div>
+              <p class="text-xs font-medium">Select an email from the list to preview its contents.</p>
+            </div>
+
+            <!-- ACTIVE EMAIL CONTENT DISPLAY -->
+            <div id="readerContent" class="flex-1 flex-col min-h-0 hidden">
+              <div class="p-6 border-b border-slate-100 space-y-3">
+                <h2 id="readerSubject" class="text-lg font-bold text-slate-900 leading-snug">Subject Title</h2>
+                <div class="flex items-center justify-between text-xs text-slate-500">
+                  <div class="flex items-center gap-2">
+                    <span id="readerFrom" class="font-semibold text-slate-800">From: sender@domain.com</span>
+                  </div>
+                  <span id="readerTime" class="text-slate-400">12:00 PM</span>
+                </div>
+              </div>
+              <div class="flex-1 p-6 overflow-y-auto whitespace-pre-wrap font-sans text-xs text-slate-700 leading-relaxed bg-slate-50/50" id="readerBody">
+                Message body...
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </main>
 
     </div>
 
   </div>
 
-  <!-- 4. EMAIL READER POPUP MODAL (Full screen popup when clicking an email) -->
-  <div id="emailModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="ios-glass-light max-w-lg w-full p-6 rounded-3xl shadow-2xl space-y-4 border border-slate-200 bg-white">
-      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-        <h3 id="modalSubject" class="font-semibold text-sm text-slate-900 truncate pr-4">Subject</h3>
-        <button onclick="closeEmailModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs transition">✕</button>
-      </div>
-      <div class="space-y-2 text-xs">
-        <div class="text-slate-500 flex justify-between">
-          <span id="modalFrom">From: ...</span>
-          <span id="modalTime">Time: ...</span>
-        </div>
-        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 min-h-[180px] max-h-[300px] overflow-y-auto whitespace-pre-wrap font-sans" id="modalBody">
-          Loading content...
-        </div>
-      </div>
-    </div>
-  </div>
-
+  <!-- SCRIPT LOGIC & SECURITY LOCKS -->
   <script>
-const HOST_DOMAIN = "gmail.movieflix.pk";
-    const SECRET_PIN = "7860"; // Aap yahan apna secret passcode rakh sakte hain
+    const HOST_DOMAIN = "gmail.movieflix.pk";
+    const SECRET_PIN = "7860"; // Secret Passcode
     const muslimNames = ["ahmad", "zain", "hamza", "umar", "ali", "bilal", "fahad", "usman", "ibrahim", "hassan", "fatima", "aisha", "zainab", "yusuf", "talha", "saad"];
     const companyNames = ["albarakah", "nexustech", "globalsoft", "alfatah", "almiraj", "smarttech", "horizon", "primepos"];
 
@@ -127,6 +265,20 @@ const HOST_DOMAIN = "gmail.movieflix.pk";
     let currentEmail = '';
     let currentToken = '';
     let currentMessages = [];
+    let selectedEmailIndex = -1;
+
+    // --- SECURITY LOCK ENGINE (Prevent Inspect Element) ---
+    document.addEventListener('keydown', function(e) {
+      if (
+        e.keyCode === 123 || // F12
+        (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || // Ctrl+Shift+I / J
+        (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83)) || // Ctrl+U / Ctrl+S
+        (e.metaKey && e.altKey && (e.keyCode === 73 || e.keyCode === 74)) // Cmd+Opt+I / J (Mac)
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    });
 
     function parseHash() {
       const hash = window.location.hash.substring(1);
@@ -141,19 +293,19 @@ const HOST_DOMAIN = "gmail.movieflix.pk";
       const urlParams = parseHash();
 
       if (urlParams.box && urlParams.token) {
-        // Isolated Mailbox View (No password required if valid token link is opened)
+        // Direct Isolated Mailbox Link
         currentEmail = urlParams.box;
         currentToken = urlParams.token;
         
         document.getElementById('lockScreen').classList.add('hidden');
-        document.getElementById('adminDashboard').classList.add('hidden');
-        document.getElementById('secureMailboxView').classList.remove('hidden');
-        document.getElementById('activeEmailText').innerText = currentEmail;
+        document.getElementById('mainDashboardWrapper').classList.remove('hidden');
+        document.getElementById('adminGenerateBtn').classList.add('hidden'); // Hide Generator for external viewers
         
+        updateActiveEmailUI();
         checkSecureInbox();
         setInterval(checkSecureInbox, 4000);
       } else {
-        // Check if already unlocked in session
+        // Admin View
         if (sessionStorage.getItem('unlocked') === 'true') {
           showAdminConsole();
         } else {
@@ -174,9 +326,24 @@ const HOST_DOMAIN = "gmail.movieflix.pk";
 
     function showAdminConsole() {
       document.getElementById('lockScreen').classList.add('hidden');
-      document.getElementById('secureMailboxView').classList.add('hidden');
-      document.getElementById('adminDashboard').classList.remove('hidden');
+      document.getElementById('mainDashboardWrapper').classList.remove('hidden');
+      document.getElementById('lockConsoleBtn').classList.remove('hidden');
       renderAdminHistory();
+    }
+
+    function lockConsole() {
+      sessionStorage.removeItem('unlocked');
+      location.reload();
+    }
+
+    function toggleGeneratorPanel() {
+      const panel = document.getElementById('generatorPanel');
+      panel.classList.toggle('hidden');
+    }
+
+    function updateActiveEmailUI() {
+      document.getElementById('activeEmailText').innerText = currentEmail || "No active mailbox";
+      document.getElementById('sidebarActiveEmail').innerText = currentEmail || "Select or Create Mailbox";
     }
 
     async function createSingleAndCopy() {
@@ -203,15 +370,26 @@ const HOST_DOMAIN = "gmail.movieflix.pk";
       
       localHistory.unshift({ email, token, link: traceLink });
       localStorage.setItem('admin_generated_boxes', JSON.stringify(localHistory));
+      
+      currentEmail = email;
+      currentToken = token;
+      updateActiveEmailUI();
       renderAdminHistory();
       document.getElementById('customAlias').value = '';
 
-      navigator.clipboard.writeText(traceLink);
-      alert(`Generated: ${email}\n\nSecure Trace Link copied!`);
+      const dummy = document.createElement('textarea');
+      dummy.value = traceLink;
+      document.body.appendChild(dummy);
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+
+      alert(`Generated: ${email}\n\nSecure Trace Link copied to clipboard!`);
+      checkSecureInbox();
     }
 
     async function generateBulkCSV() {
-      let count = prompt("How many emails to generate? (e.g. 20)", "10");
+      let count = prompt("How many emails to generate?", "10");
       count = parseInt(count) || 10;
       let batch = [];
       let csvContent = "Email Address,Secure Traceable Link\n";
@@ -247,29 +425,54 @@ const HOST_DOMAIN = "gmail.movieflix.pk";
       a.click();
       document.body.removeChild(a);
 
-      alert(`${count} secure mailboxes generated & CSV downloaded!`);
+      alert(`${count} mailboxes generated & CSV downloaded!`);
     }
 
     function renderAdminHistory() {
       const list = document.getElementById('adminHistoryList');
       if (localHistory.length === 0) {
-        list.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">No boxes generated yet.</p>`;
+        list.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No mailboxes created yet.</p>`;
         return;
       }
-      list.innerHTML = localHistory.map(item => `
-        <div class="ios-card-light p-3 rounded-2xl flex justify-between items-center border border-slate-200">
+      list.innerHTML = localHistory.map((item, i) => `
+        <div onclick="selectBoxFromHistory(${i})" class="p-2.5 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-200 cursor-pointer transition flex justify-between items-center group">
           <div class="truncate mr-2">
-            <span class="font-mono text-xs text-indigo-600 block truncate font-medium">${item.email}</span>
-            <span class="text-[10px] text-slate-400 truncate block">${item.link}</span>
+            <span class="font-mono text-xs font-semibold text-indigo-600 block truncate">${item.email}</span>
+            <span class="text-[10px] text-slate-400 truncate block">Click to switch inbox</span>
           </div>
-          <button onclick="navigator.clipboard.writeText('${item.link}'); alert('Link copied!');" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-xl transition whitespace-nowrap shadow-sm">Copy</button>
+          <button onclick="event.stopPropagation(); copyLink('${item.link}')" class="bg-white group-hover:bg-indigo-600 group-hover:text-white border border-slate-200 group-hover:border-indigo-600 text-[10px] font-semibold text-slate-600 px-2.5 py-1 rounded-lg transition shadow-sm">Copy</button>
         </div>
       `).join('');
     }
 
+    function selectBoxFromHistory(index) {
+      const item = localHistory[index];
+      if (!item) return;
+      currentEmail = item.email;
+      currentToken = item.token;
+      updateActiveEmailUI();
+      checkSecureInbox();
+    }
+
+    function copyLink(link) {
+      const dummy = document.createElement('textarea');
+      dummy.value = link;
+      document.body.appendChild(dummy);
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      alert('Trace Link Copied!');
+    }
+
     function copyActiveMail() {
-      navigator.clipboard.writeText(currentEmail);
-      alert('Email copied!');
+      if (!currentEmail) return;
+      const dummy = document.createElement('textarea');
+      dummy.value = currentEmail;
+      document.body.appendChild(dummy);
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      alert('Email Address Copied!');
     }
 
     async function checkSecureInbox() {
@@ -278,18 +481,30 @@ const HOST_DOMAIN = "gmail.movieflix.pk";
         const res = await fetch(`/api/messages?email=${encodeURIComponent(currentEmail)}&token=${currentToken}`);
         const data = await res.json();
         currentMessages = data;
+        
         const list = document.getElementById('secureInboxList');
+        const badge = document.getElementById('unreadBadge');
+        
+        if (!Array.isArray(data) || data.length === 0) {
+          list.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2">
+              <svg class="w-10 h-10 stroke-slate-300" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <p class="text-xs font-medium">Inbox empty for this mailbox.</p>
+            </div>`;
+          badge.innerText = '0';
+          return;
+        }
 
-        if (!Array.isArray(data) || data.length === 0) return;
+        badge.innerText = data.length;
 
         list.innerHTML = data.map((mail, index) => `
-          <div onclick="openEmailModal(${index})" class="ios-card-light p-4 rounded-2xl space-y-1 hover:bg-white transition cursor-pointer border border-slate-200 shadow-sm">
-            <div class="flex justify-between items-center text-[11px] text-indigo-600 font-semibold">
-              <span>From: ${mail.from_address}</span>
-              <span class="text-slate-400">${new Date(mail.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+          <div onclick="previewEmail(${index})" class="p-3 rounded-2xl bg-white border ${selectedEmailIndex === index ? 'border-indigo-500 shadow-sm bg-indigo-50/20' : 'border-slate-200/80'} hover:border-indigo-300 cursor-pointer transition space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="font-bold text-indigo-600 truncate max-w-[140px]">${mail.from_address}</span>
+              <span class="text-slate-400 font-medium">${new Date(mail.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             </div>
-            <h3 class="font-medium text-xs text-slate-900">${mail.subject}</h3>
-            <p class="text-[11px] text-slate-500 line-clamp-1">${mail.body_text}</p>
+            <h4 class="font-bold text-xs text-slate-900 truncate">${mail.subject || '(No Subject)'}</h4>
+            <p class="text-[11px] text-slate-500 line-clamp-1">${mail.body_text || mail.body_html || 'No preview content'}</p>
           </div>
         `).join('');
       } catch (e) {
@@ -297,18 +512,33 @@ const HOST_DOMAIN = "gmail.movieflix.pk";
       }
     }
 
-    function openEmailModal(index) {
+    function previewEmail(index) {
+      selectedEmailIndex = index;
       const mail = currentMessages[index];
       if (!mail) return;
-      document.getElementById('modalSubject').innerText = mail.subject;
-      document.getElementById('modalFrom').innerText = `From: ${mail.from_address}`;
-      document.getElementById('modalTime').innerText = new Date(mail.created_at).toLocaleString();
-      document.getElementById('modalBody').innerText = mail.body_text || mail.body_html || 'No content';
-      document.getElementById('emailModal').classList.remove('hidden');
+
+      document.getElementById('readerPlaceholder').classList.add('hidden');
+      const content = document.getElementById('readerContent');
+      content.classList.remove('hidden');
+      content.classList.add('flex');
+
+      document.getElementById('readerSubject').innerText = mail.subject || '(No Subject)';
+      document.getElementById('readerFrom').innerText = `From: ${mail.from_address}`;
+      document.getElementById('readerTime').innerText = new Date(mail.created_at).toLocaleString();
+      document.getElementById('readerBody').innerText = mail.body_text || mail.body_html || 'No message content available.';
+
+      checkSecureInbox();
     }
 
-    function closeEmailModal() {
-      document.getElementById('emailModal').classList.add('hidden');
+    function switchTab(tab) {
+      document.querySelectorAll('#nav-inbox, #nav-starred, #nav-sent').forEach(el => {
+        el.classList.remove('bg-indigo-50', 'text-indigo-700', 'font-semibold');
+        el.classList.add('text-slate-600');
+      });
+      const active = document.getElementById(`nav-${tab}`);
+      if (active) {
+        active.classList.add('bg-indigo-50', 'text-indigo-700', 'font-semibold');
+      }
     }
 
     init();
