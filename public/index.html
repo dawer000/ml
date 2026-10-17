@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Mailbox</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: #f3f4f6;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+    .ios-glass-light {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+    }
+    .ios-card-light {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+    }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col items-center justify-center p-4 relative">
+
+  <!-- CONTAINER -->
+  <div class="max-w-xl w-full space-y-4 relative z-10">
+
+    <!-- 1. PASSWORD LOCK SCREEN (Agar koi direct home page khole) -->
+    <div id="lockScreen" class="ios-glass-light p-8 rounded-3xl text-center space-y-4 shadow-xl">
+      <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 font-bold text-lg">🔒</div>
+      <h1 class="text-lg font-semibold text-slate-900">Secure Access Required</h1>
+      <p class="text-xs text-slate-500">Enter access passcode to view console or mailbox.</p>
+      <input id="accessPin" type="password" placeholder="Enter Passcode..." class="bg-white px-4 py-3 rounded-2xl text-xs w-full border border-slate-200 text-center text-slate-800 focus:outline-none focus:border-indigo-500 shadow-inner">
+      <button onclick="verifyPin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-2xl text-xs font-semibold shadow-lg shadow-indigo-600/20 active:scale-95 transition">Unlock Console</button>
+    </div>
+
+    <!-- 2. ADMIN CONSOLE (Visible after unlock or valid token) -->
+    <div id="adminDashboard" class="space-y-4 hidden">
+      <div class="text-center py-1">
+        <h1 class="text-xl font-semibold tracking-tight text-slate-900">Console Manager</h1>
+        <p class="text-xs text-slate-500">Generate secure untraceable mailboxes</p>
+      </div>
+
+      <div class="ios-glass-light p-6 rounded-3xl space-y-4">
+        <span class="text-[10px] font-medium uppercase tracking-wider text-indigo-600 block">Generator & Alias Customizer</span>
+        <div class="space-y-2">
+          <input id="customAlias" type="text" placeholder="Custom prefix (optional, e.g. executive_hr)" class="bg-white px-3.5 py-2.5 rounded-2xl text-xs w-full border border-slate-200 text-slate-800 focus:outline-none focus:border-indigo-500">
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <button onclick="createSingleAndCopy()" class="bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition text-xs font-semibold text-white py-3 px-4 rounded-2xl shadow-md">
+              + Generate & Copy
+            </button>
+            <button onclick="generateBulkCSV()" class="ios-card-light hover:bg-slate-50 active:scale-95 transition text-xs font-semibold text-slate-700 py-3 px-4 rounded-2xl border border-slate-200">
+              ⚡ Export Bulk CSV
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ios-glass-light p-5 rounded-3xl space-y-3">
+        <span class="text-[10px] font-medium uppercase tracking-wider text-slate-500 block">Generated History</span>
+        <div id="adminHistoryList" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+
+    <!-- 3. ISOLATED DEDICATED MAILBOX VIEW (White Clean iOS UI) -->
+    <div id="secureMailboxView" class="space-y-4 hidden">
+      
+      <div class="ios-glass-light p-4 rounded-3xl flex items-center justify-between gap-3 shadow-md">
+        <div class="flex-1 cursor-pointer group" onclick="copyActiveMail()" title="Click to copy">
+          <span class="text-[10px] font-medium uppercase tracking-wider text-slate-400 block px-1 mb-0.5">Secure Mailbox</span>
+          <div id="activeEmailText" class="font-mono text-sm font-semibold text-indigo-600 px-1 break-all">Loading...</div>
+        </div>
+        <button onclick="copyActiveMail()" class="ios-card-light hover:bg-slate-100 active:scale-95 transition text-xs font-medium text-slate-700 px-3.5 py-2.5 rounded-2xl border border-slate-200">
+          Copy Email
+        </button>
+      </div>
+
+      <div class="ios-glass-light p-6 rounded-3xl min-h-[440px] flex flex-col shadow-lg">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200/60 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <h2 class="text-xs font-semibold tracking-wider uppercase text-slate-700">Live Secure Inbox</h2>
+          </div>
+          <span id="syncStatus" class="text-[10px] text-slate-400">Syncing active</span>
+        </div>
+
+        <div id="secureInboxList" class="flex-1 space-y-3">
+          <div class="h-full flex flex-col items-center justify-center text-center py-24 text-slate-400">
+            <p class="text-xs">Waiting for incoming messages...</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- 4. EMAIL READER POPUP MODAL (Full screen popup when clicking an email) -->
+  <div id="emailModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="ios-glass-light max-w-lg w-full p-6 rounded-3xl shadow-2xl space-y-4 border border-slate-200 bg-white">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h3 id="modalSubject" class="font-semibold text-sm text-slate-900 truncate pr-4">Subject</h3>
+        <button onclick="closeEmailModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs transition">✕</button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <div class="text-slate-500 flex justify-between">
+          <span id="modalFrom">From: ...</span>
+          <span id="modalTime">Time: ...</span>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 min-h-[180px] max-h-[300px] overflow-y-auto whitespace-pre-wrap font-sans" id="modalBody">
+          Loading content...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+const HOST_DOMAIN = "gmail.movieflix.pk";
+    const SECRET_PIN = "7860"; // Aap yahan apna secret passcode rakh sakte hain
+    const muslimNames = ["ahmad", "zain", "hamza", "umar", "ali", "bilal", "fahad", "usman", "ibrahim", "hassan", "fatima", "aisha", "zainab", "yusuf", "talha", "saad"];
+    const companyNames = ["albarakah", "nexustech", "globalsoft", "alfatah", "almiraj", "smarttech", "horizon", "primepos"];
+
+    let localHistory = JSON.parse(localStorage.getItem('admin_generated_boxes') || '[]');
+    let currentEmail = '';
+    let currentToken = '';
+    let currentMessages = [];
+
+    function parseHash() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      return {
+        box: params.get('box'),
+        token: params.get('token')
+      };
+    }
+
+    async function init() {
+      const urlParams = parseHash();
+
+      if (urlParams.box && urlParams.token) {
+        // Isolated Mailbox View (No password required if valid token link is opened)
+        currentEmail = urlParams.box;
+        currentToken = urlParams.token;
+        
+        document.getElementById('lockScreen').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
+        document.getElementById('secureMailboxView').classList.remove('hidden');
+        document.getElementById('activeEmailText').innerText = currentEmail;
+        
+        checkSecureInbox();
+        setInterval(checkSecureInbox, 4000);
+      } else {
+        // Check if already unlocked in session
+        if (sessionStorage.getItem('unlocked') === 'true') {
+          showAdminConsole();
+        } else {
+          document.getElementById('lockScreen').classList.remove('hidden');
+        }
+      }
+    }
+
+    function verifyPin() {
+      const entered = document.getElementById('accessPin').value;
+      if (entered === SECRET_PIN) {
+        sessionStorage.setItem('unlocked', 'true');
+        showAdminConsole();
+      } else {
+        alert('Incorrect Passcode!');
+      }
+    }
+
+    function showAdminConsole() {
+      document.getElementById('lockScreen').classList.add('hidden');
+      document.getElementById('secureMailboxView').classList.add('hidden');
+      document.getElementById('adminDashboard').classList.remove('hidden');
+      renderAdminHistory();
+    }
+
+    async function createSingleAndCopy() {
+      const aliasInput = document.getElementById('customAlias').value.trim();
+      let email = "";
+      if (aliasInput) {
+        email = `${aliasInput.toLowerCase().replace(/[^a-z0-9_]/g, '')}@${HOST_DOMAIN}`;
+      } else {
+        const pool = Math.random() > 0.5 ? muslimNames : companyNames;
+        const randomName = pool[Math.floor(Math.random() * pool.length)];
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        email = `${randomName}${randomNum}@${HOST_DOMAIN}`;
+      }
+
+      const token = 'sec_' + Math.random().toString(36).substring(2, 12);
+
+      await fetch('/api/mailbox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: email, token: token })
+      });
+
+      const traceLink = `${window.location.origin}${window.location.pathname}#box=${email}&token=${token}`;
+      
+      localHistory.unshift({ email, token, link: traceLink });
+      localStorage.setItem('admin_generated_boxes', JSON.stringify(localHistory));
+      renderAdminHistory();
+      document.getElementById('customAlias').value = '';
+
+      navigator.clipboard.writeText(traceLink);
+      alert(`Generated: ${email}\n\nSecure Trace Link copied!`);
+    }
+
+    async function generateBulkCSV() {
+      let count = prompt("How many emails to generate? (e.g. 20)", "10");
+      count = parseInt(count) || 10;
+      let batch = [];
+      let csvContent = "Email Address,Secure Traceable Link\n";
+
+      for (let i = 0; i < count; i++) {
+        const pool = Math.random() > 0.5 ? muslimNames : companyNames;
+        const randomName = pool[Math.floor(Math.random() * pool.length)];
+        const randomNum = Math.floor(1000 + Math.random() * 9000);
+        const email = `${randomName}${randomNum}@${HOST_DOMAIN}`;
+        const token = 'sec_' + Math.random().toString(36).substring(2, 12);
+        const link = `${window.location.origin}${window.location.pathname}#box=${email}&token=${token}`;
+
+        batch.push({ address: email, token: token });
+        localHistory.unshift({ email, token, link });
+        csvContent += `${email},"${link}"\n`;
+      }
+
+      await fetch('/api/bulk-mailbox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mailboxes: batch })
+      });
+
+      localStorage.setItem('admin_generated_boxes', JSON.stringify(localHistory));
+      renderAdminHistory();
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `secure_mailboxes_${count}_${Date.now()}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      alert(`${count} secure mailboxes generated & CSV downloaded!`);
+    }
+
+    function renderAdminHistory() {
+      const list = document.getElementById('adminHistoryList');
+      if (localHistory.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">No boxes generated yet.</p>`;
+        return;
+      }
+      list.innerHTML = localHistory.map(item => `
+        <div class="ios-card-light p-3 rounded-2xl flex justify-between items-center border border-slate-200">
+          <div class="truncate mr-2">
+            <span class="font-mono text-xs text-indigo-600 block truncate font-medium">${item.email}</span>
+            <span class="text-[10px] text-slate-400 truncate block">${item.link}</span>
+          </div>
+          <button onclick="navigator.clipboard.writeText('${item.link}'); alert('Link copied!');" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-1.5 rounded-xl transition whitespace-nowrap shadow-sm">Copy</button>
+        </div>
+      `).join('');
+    }
+
+    function copyActiveMail() {
+      navigator.clipboard.writeText(currentEmail);
+      alert('Email copied!');
+    }
+
+    async function checkSecureInbox() {
+      if (!currentEmail) return;
+      try {
+        const res = await fetch(`/api/messages?email=${encodeURIComponent(currentEmail)}&token=${currentToken}`);
+        const data = await res.json();
+        currentMessages = data;
+        const list = document.getElementById('secureInboxList');
+
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        list.innerHTML = data.map((mail, index) => `
+          <div onclick="openEmailModal(${index})" class="ios-card-light p-4 rounded-2xl space-y-1 hover:bg-white transition cursor-pointer border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center text-[11px] text-indigo-600 font-semibold">
+              <span>From: ${mail.from_address}</span>
+              <span class="text-slate-400">${new Date(mail.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+            <h3 class="font-medium text-xs text-slate-900">${mail.subject}</h3>
+            <p class="text-[11px] text-slate-500 line-clamp-1">${mail.body_text}</p>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function openEmailModal(index) {
+      const mail = currentMessages[index];
+      if (!mail) return;
+      document.getElementById('modalSubject').innerText = mail.subject;
+      document.getElementById('modalFrom').innerText = `From: ${mail.from_address}`;
+      document.getElementById('modalTime').innerText = new Date(mail.created_at).toLocaleString();
+      document.getElementById('modalBody').innerText = mail.body_text || mail.body_html || 'No content';
+      document.getElementById('emailModal').classList.remove('hidden');
+    }
+
+    function closeEmailModal() {
+      document.getElementById('emailModal').classList.add('hidden');
+    }
+
+    init();
+  </script>
+</body>
+</html>

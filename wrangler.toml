@@ -1,0 +1,11 @@
+name = "temp-email-worker"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[assets]
+directory = "./public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "temp-email-db"
+database_id = "0c663103-382b-44b8-87cc-cc1ff3b9bac9"
